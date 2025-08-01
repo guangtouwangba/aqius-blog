@@ -3,10 +3,10 @@
 
 # 站点基本信息
 site:
-  name: "Tech Blog"
-  title: "现代前端技术博客"
-  description: "专注于前端技术、Web开发和编程实践的技术博客"
-  url: "https://your-blog.com"
+  name: "Aqiu's Blog"
+  title: "后端开发，专注go，AI应用开发"
+  description: "后端开发，专注go，AI应用开发"
+  url: "https://aqiu.com"
   ogImage: "/og-image.jpg"
   language: "zh-CN"
   timezone: "Asia/Shanghai"
@@ -50,7 +50,7 @@ navigation:
 home:
   # Hero区域
   hero:
-    title: "现代前端技术博客"
+    title: "Aqiu's Blog"
     subtitle: "探索前沿技术，分享开发经验"
     description: "后端开发，专注于AI应用，分享个人最新AI观点"
     ctaText: "开始阅读"
