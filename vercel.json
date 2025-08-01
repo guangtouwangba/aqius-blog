@@ -1,20 +1,12 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/rss.xml",
-      "destination": "/api/rss"
+      "destination": "/rss.xml"
     },
     {
       "source": "/sitemap.xml", 
-      "destination": "/api/sitemap"
+      "destination": "/sitemap.xml"
     }
   ],
   "headers": [
