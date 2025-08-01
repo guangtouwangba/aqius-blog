@@ -133,7 +133,7 @@ export function getConfig(): SiteConfig {
         const { buildTimeConfig } = require('./generated-config')
         cachedConfig = buildTimeConfig
         console.log('Configuration loaded from build-time generated config')
-        return cachedConfig
+        return buildTimeConfig
       } catch {
         console.warn('Build-time config not found, falling back to runtime loading')
       }
@@ -184,8 +184,9 @@ export function getConfig(): SiteConfig {
     
     // 最后的fallback：使用硬编码的默认配置
     console.warn('Using fallback configuration')
-    cachedConfig = getFallbackConfig()
-    return cachedConfig
+    const fallbackConfig = getFallbackConfig()
+    cachedConfig = fallbackConfig
+    return fallbackConfig
   }
 }
 
