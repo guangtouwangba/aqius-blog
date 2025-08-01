@@ -53,3 +53,6 @@ Thumbs.db
 # logs
 logs/
 *.log
+
+# generated files
+src/lib/generated-config.ts
