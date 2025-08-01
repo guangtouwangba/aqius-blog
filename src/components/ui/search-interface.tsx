@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { Search, X, Filter, Tag, Calendar } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Search, X, Filter, Tag } from 'lucide-react'
 import { ArticleCard } from './article-card'
 import { PostMetadata } from '@/lib/posts'
 

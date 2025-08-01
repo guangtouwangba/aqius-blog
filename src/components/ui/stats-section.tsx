@@ -1,6 +1,5 @@
 'use client'
 
-import { FileText, Eye, Calendar, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useConfig } from '@/components/providers/config-provider'
 

@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { ArrowRight, Code, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useConfig } from '@/components/providers/config-provider'

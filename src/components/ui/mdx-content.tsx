@@ -1,6 +1,6 @@
 import React from 'react'
 import { MDXRemote } from 'next-mdx-remote/rsc'
-import { Code, Copy, Check, ExternalLink } from 'lucide-react'
+import { Code, ExternalLink } from 'lucide-react'
 
 // 自定义代码块组件
 function CodeBlock({ children, className, ...props }: any) {

@@ -30,7 +30,7 @@ export async function subscribeWithMailchimp(email: string) {
   const MAILCHIMP_ID = 'YOUR_LIST_ID'
 
   try {
-    const response = await fetch(
+    await fetch(
       `${MAILCHIMP_URL}?u=${MAILCHIMP_U}&id=${MAILCHIMP_ID}&EMAIL=${encodeURIComponent(email)}&c=?`,
       {
         method: 'GET',

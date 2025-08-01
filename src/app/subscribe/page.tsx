@@ -36,7 +36,7 @@ export default function SubscribePage() {
       setStatus('success')
       setMessage('订阅成功！我们会将最新的技术文章发送到您的邮箱。')
       setEmail('')
-    } catch (error) {
+    } catch {
       setStatus('error')
       setMessage('订阅失败，请稍后重试。')
     }

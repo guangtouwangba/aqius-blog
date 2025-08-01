@@ -129,11 +129,12 @@ export function getConfig(): SiteConfig {
     // 在生产环境中，优先使用构建时生成的配置
     if (process.env.NODE_ENV === 'production') {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { buildTimeConfig } = require('./generated-config')
         cachedConfig = buildTimeConfig
         console.log('Configuration loaded from build-time generated config')
         return cachedConfig
-      } catch (error) {
+      } catch {
         console.warn('Build-time config not found, falling back to runtime loading')
       }
     }
@@ -157,7 +158,7 @@ export function getConfig(): SiteConfig {
           fileContents = fs.readFileSync(tryPath, 'utf8')
           break
         }
-      } catch (err) {
+      } catch {
         // 继续尝试下一个路径
         continue
       }

@@ -18,7 +18,7 @@ export function Header() {
   const config = useConfig()
   
   const socialLinks = Object.entries(config.author.social)
-    .filter(([_, url]) => url)
+    .filter(([, url]) => url)
     .map(([platform, url]) => ({
       name: platform,
       href: url,

@@ -4,7 +4,6 @@ import { Metadata } from 'next'
 import { CalendarDays, Clock, User, ArrowLeft, Tag } from 'lucide-react'
 import { getPostBySlug, getAllPosts } from '@/lib/posts'
 import { MDXContent } from '@/components/ui/mdx-content'
-import { TableOfContentsWrapper } from '@/components/ui/table-of-contents-wrapper'
 
 interface PostPageProps {
   params: Promise<{ slug: string }>
