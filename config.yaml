@@ -1,0 +1,202 @@
+# 技术博客配置文件
+# 类似Hugo的配置结构
+
+# 站点基本信息
+site:
+  name: "Tech Blog"
+  title: "现代前端技术博客"
+  description: "专注于前端技术、Web开发和编程实践的技术博客"
+  url: "https://your-blog.com"
+  ogImage: "/og-image.jpg"
+  language: "zh-CN"
+  timezone: "Asia/Shanghai"
+
+# 作者信息
+author:
+  name: "aqiu"
+  email: "819110812@qq.com"
+  avatar: "/avatar.jpg"
+  bio: "后端开发，专注go，AI应用开发"
+  location: "中国"
+  website: "https://your-blog.com"
+  resume: "/resume.pdf"                     # 简历文件路径
+  
+  # 社交媒体链接
+  social:
+    github: "https://github.com/guangtouwangba"
+    twitter: "https://twitter.com/yourusername"
+    linkedin: "https://linkedin.com/in/yourusername"
+    email: "developer@example.com"
+
+# 导航菜单
+navigation:
+  - name: "首页"
+    href: "/"
+    weight: 1
+  - name: "文章"
+    href: "/posts"
+    weight: 2
+  - name: "标签"
+    href: "/tags"
+    weight: 3
+  - name: "搜索"
+    href: "/search"
+    weight: 4
+  - name: "关于"
+    href: "/about"
+    weight: 5
+
+# 首页配置
+home:
+  # Hero区域
+  hero:
+    title: "现代前端技术博客"
+    subtitle: "探索前沿技术，分享开发经验"
+    description: "后端开发，专注于AI应用，分享个人最新AI观点"
+    ctaText: "开始阅读"
+    ctaLink: "/posts"
+    backgroundImage: ""
+  
+  # 统计数据（自动计算，只需配置标题）
+  stats:
+    title: "博客数据"
+  
+  # 精选文章区域
+  featuredSection:
+    title: "精选文章"
+    description: "最受欢迎和最具价值的技术文章"
+    showCount: 3
+  
+  # 最新文章区域
+  recentSection:
+    title: "最新文章"
+    description: "最近更新的技术内容"
+    showCount: 6
+
+# 关于页面配置
+about:
+  title: "关于我"
+  description: "了解更多关于这位后端开发者的信息"
+  bio: "后端开发，专注于AI应用，分享个人最新AI观点"
+  
+  # 技能分类
+  skills:
+    - category: "前端技术"
+      items:
+        - "React"
+        - "Vue.js" 
+        - "TypeScript"
+        - "Next.js"
+        - "Tailwind CSS"
+        - "Vite"
+    - category: "后端技术"
+      items:
+        - "Node.js"
+        - "Python"
+        - "Express"
+        - "FastAPI"
+        - "PostgreSQL"
+        - "MongoDB"
+    - category: "开发工具"
+      items:
+        - "Git"
+        - "Docker"
+        - "AWS"
+        - "Vercel"
+        - "VS Code"
+        - "Linux"
+    - category: "其他技能"
+      items:
+        - "API设计"
+        - "数据库设计"
+        - "系统架构"
+        - "性能优化"
+        - "代码审查"
+        - "团队协作"
+  
+  # 工作经历
+  experience:
+    - title: "高级前端工程师"
+      company: "科技公司"
+      period: "2022 - 至今"
+      description: "负责大型Web应用的前端架构设计和开发，使用React、TypeScript等技术栈构建高性能用户界面。"
+    - title: "全栈开发工程师"
+      company: "创业公司"
+      period: "2020 - 2022"
+      description: "参与产品从0到1的完整开发过程，包括前端、后端、数据库设计以及部署运维。"
+    - title: "软件开发实习生"
+      company: "技术公司"
+      period: "2019 - 2020"
+      description: "学习现代Web开发技术，参与团队项目开发，积累实际项目经验。"
+  
+  # 教育背景（可选）
+  education:
+    - degree: "计算机科学学士"
+      school: "某大学"
+      period: "2016 - 2020"
+  
+  # 联系方式
+  contact:
+    title: "联系方式"
+    description: "欢迎与我交流技术问题或合作机会"
+    email: "developer@example.com"
+    social:
+      - platform: "GitHub"
+        url: "https://github.com/yourusername"
+        handle: "@yourusername"
+      - platform: "Twitter"
+        url: "https://twitter.com/yourusername"
+        handle: "@yourusername"
+      - platform: "LinkedIn" 
+        url: "https://linkedin.com/in/yourusername"
+        handle: "Your Name"
+
+# 页脚配置
+footer:
+  copyright: "© 2024 Tech Blog. All rights reserved."
+  links:
+    - title: "导航"
+      items:
+        - name: "首页"
+          href: "/"
+        - name: "文章"
+          href: "/posts"
+        - name: "标签"
+          href: "/tags"
+        - name: "关于"
+          href: "/about"
+    - title: "社交"
+      items:
+        - name: "GitHub"
+          href: "https://github.com/yourusername"
+        - name: "Twitter"
+          href: "https://twitter.com/yourusername"
+        - name: "LinkedIn"
+          href: "https://linkedin.com/in/yourusername"
+    - title: "其他"
+      items:
+        - name: "RSS"
+          href: "/rss.xml"
+        - name: "站点地图"
+          href: "/sitemap.xml"
+
+# SEO和分析配置
+seo:
+  keywords:
+    - "前端开发"
+    - "JavaScript"
+    - "TypeScript"
+    - "React"
+    - "Vue.js"
+    - "Node.js"
+    - "技术博客"
+  googleAnalytics: ""
+  baiduAnalytics: ""
+
+# 功能开关
+features:
+  darkMode: true
+  search: true
+  comments: false
+  rss: true
+  sitemap: true

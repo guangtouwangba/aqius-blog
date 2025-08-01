@@ -1,0 +1,530 @@
+---
+title: "Node.js 性能优化实战"
+excerpt: "从内存管理到异步处理，全面介绍 Node.js 应用的性能优化策略和实践方法。"
+publishDate: "2024-01-08"
+readTime: 15
+tags: ["Node.js", "性能优化", "后端开发"]
+author: "TechBlog"
+---
+
+# Node.js 性能优化实战
+
+Node.js 应用的性能优化是一个多层面的工程。本文将从内存管理、异步处理、缓存策略等方面，全面介绍 Node.js 性能优化的实践方法。
+
+## 内存管理与优化
+
+### 内存泄漏检测
+
+```javascript
+// 使用 clinic.js 进行性能分析
+const clinic = require('clinic')
+
+// 内存使用监控
+function monitorMemory() {
+  const usage = process.memoryUsage()
+  console.log({
+    rss: `${Math.round(usage.rss / 1024 / 1024)} MB`,
+    heapTotal: `${Math.round(usage.heapTotal / 1024 / 1024)} MB`,
+    heapUsed: `${Math.round(usage.heapUsed / 1024 / 1024)} MB`,
+    external: `${Math.round(usage.external / 1024 / 1024)} MB`
+  })
+}
+
+// 定期监控
+setInterval(monitorMemory, 5000)
+```
+
+### 避免内存泄漏的最佳实践
+
+```javascript
+// ❌ 内存泄漏示例
+class DataProcessor {
+  constructor() {
+    this.cache = new Map()
+    this.listeners = []
+  }
+  
+  // 缓存不断增长，从不清理
+  process(data) {
+    this.cache.set(data.id, data)
+    return this.transform(data)
+  }
+  
+  // 事件监听器没有清理
+  setupListeners() {
+    process.on('SIGTERM', this.cleanup.bind(this))
+    // 永远不会被移除
+  }
+}
+
+// ✅ 正确的内存管理
+class OptimizedDataProcessor {
+  constructor(maxCacheSize = 1000) {
+    this.cache = new Map()
+    this.maxCacheSize = maxCacheSize
+    this.listeners = new Set()
+  }
+  
+  process(data) {
+    // 限制缓存大小
+    if (this.cache.size >= this.maxCacheSize) {
+      const firstKey = this.cache.keys().next().value
+      this.cache.delete(firstKey)
+    }
+    this.cache.set(data.id, data)
+    return this.transform(data)
+  }
+  
+  setupListeners() {
+    const cleanup = this.cleanup.bind(this)
+    process.on('SIGTERM', cleanup)
+    this.listeners.add(() => process.off('SIGTERM', cleanup))
+  }
+  
+  destroy() {
+    // 清理所有资源
+    this.cache.clear()
+    this.listeners.forEach(removeListener => removeListener())
+    this.listeners.clear()
+  }
+}
+```
+
+## 异步操作优化
+
+### 合理使用 Promise 和 async/await
+
+```javascript
+// ❌ 串行处理，效率低
+async function inefficientDataFetch(ids) {
+  const results = []
+  for (const id of ids) {
+    const data = await fetchData(id)  // 逐个等待
+    results.push(data)
+  }
+  return results
+}
+
+// ✅ 并行处理，效率高
+async function efficientDataFetch(ids) {
+  const promises = ids.map(id => fetchData(id))
+  return Promise.all(promises)
+}
+
+// ✅ 控制并发数量
+async function controlledConcurrentFetch(ids, maxConcurrent = 5) {
+  const results = []
+  for (let i = 0; i < ids.length; i += maxConcurrent) {
+    const batch = ids.slice(i, i + maxConcurrent)
+    const batchPromises = batch.map(id => fetchData(id))
+    const batchResults = await Promise.all(batchPromises)
+    results.push(...batchResults)
+  }
+  return results
+}
+```
+
+### Worker Threads 处理 CPU 密集型任务
+
+```javascript
+// worker.js
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads')
+
+if (isMainThread) {
+  // 主线程
+  function runWorker(data) {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(__filename, {
+        workerData: data
+      })
+      
+      worker.on('message', resolve)
+      worker.on('error', reject)
+      worker.on('exit', (code) => {
+        if (code !== 0) {
+          reject(new Error(`Worker stopped with exit code ${code}`))
+        }
+      })
+    })
+  }
+  
+  // CPU 密集型任务分发
+  async function processBigData(dataset) {
+    const chunkSize = Math.ceil(dataset.length / 4)  // 4个worker
+    const chunks = []
+    
+    for (let i = 0; i < dataset.length; i += chunkSize) {
+      chunks.push(dataset.slice(i, i + chunkSize))
+    }
+    
+    const promises = chunks.map(chunk => runWorker(chunk))
+    const results = await Promise.all(promises)
+    
+    return results.flat()
+  }
+  
+  module.exports = { processBigData }
+} else {
+  // Worker 线程
+  function heavyComputation(data) {
+    // 模拟CPU密集型计算
+    return data.map(item => {
+      let result = 0
+      for (let i = 0; i < 1000000; i++) {
+        result += Math.sqrt(item * i)
+      }
+      return result
+    })
+  }
+  
+  const result = heavyComputation(workerData)
+  parentPort.postMessage(result)
+}
+```
+
+## 数据库优化
+
+### 连接池管理
+
+```javascript
+const mysql = require('mysql2/promise')
+
+// ✅ 连接池配置
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: 'password',
+  database: 'mydb',
+  waitForConnections: true,
+  connectionLimit: 10,          // 最大连接数
+  queueLimit: 0,
+  acquireTimeout: 60000,        // 获取连接超时时间
+  timeout: 60000,               // 查询超时时间
+  reconnect: true,
+  reconnectDelay: 2000,
+})
+
+// 查询优化
+class DatabaseService {
+  constructor(pool) {
+    this.pool = pool
+    this.queryCache = new Map()
+  }
+  
+  // 查询缓存
+  async cachedQuery(sql, params, cacheKey, ttl = 300000) {
+    if (this.queryCache.has(cacheKey)) {
+      const cached = this.queryCache.get(cacheKey)
+      if (Date.now() - cached.timestamp < ttl) {
+        return cached.data
+      }
+      this.queryCache.delete(cacheKey)
+    }
+    
+    const [rows] = await this.pool.execute(sql, params)
+    this.queryCache.set(cacheKey, {
+      data: rows,
+      timestamp: Date.now()
+    })
+    
+    return rows
+  }
+  
+  // 批量插入优化
+  async batchInsert(table, records, batchSize = 1000) {
+    if (records.length === 0) return
+    
+    const columns = Object.keys(records[0])
+    const placeholders = columns.map(() => '?').join(',')
+    const sql = `INSERT INTO ${table} (${columns.join(',')}) VALUES (${placeholders})`
+    
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize)
+      const values = batch.map(record => columns.map(col => record[col]))
+      
+      // 使用事务提高批量插入性能
+      const connection = await this.pool.getConnection()
+      try {
+        await connection.beginTransaction()
+        
+        for (const value of values) {
+          await connection.execute(sql, value)
+        }
+        
+        await connection.commit()
+      } catch (error) {
+        await connection.rollback()
+        throw error
+      } finally {
+        connection.release()
+      }
+    }
+  }
+}
+```
+
+### Redis 缓存策略
+
+```javascript
+const Redis = require('ioredis')
+
+class CacheService {
+  constructor() {
+    this.redis = new Redis({
+      host: 'localhost',
+      port: 6379,
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    })
+    
+    // 连接事件处理
+    this.redis.on('error', (err) => {
+      console.error('Redis connection error:', err)
+    })
+  }
+  
+  // 多级缓存策略
+  async get(key) {
+    try {
+      // L1: 内存缓存 (最快)
+      if (this.memoryCache.has(key)) {
+        return this.memoryCache.get(key)
+      }
+      
+      // L2: Redis 缓存
+      const cached = await this.redis.get(key)
+      if (cached) {
+        const data = JSON.parse(cached)
+        // 回填内存缓存
+        this.memoryCache.set(key, data)
+        return data
+      }
+      
+      return null
+    } catch (error) {
+      console.error('Cache get error:', error)
+      return null
+    }
+  }
+  
+  async set(key, value, ttl = 3600) {
+    try {
+      // 同时写入两级缓存
+      this.memoryCache.set(key, value)
+      await this.redis.setex(key, ttl, JSON.stringify(value))
+    } catch (error) {
+      console.error('Cache set error:', error)
+    }
+  }
+  
+  // 缓存预热
+  async warmup(keys) {
+    const pipeline = this.redis.pipeline()
+    keys.forEach(key => {
+      pipeline.get(key)
+    })
+    
+    const results = await pipeline.exec()
+    results.forEach(([err, result], index) => {
+      if (!err && result) {
+        this.memoryCache.set(keys[index], JSON.parse(result))
+      }
+    })
+  }
+}
+```
+
+## HTTP 服务优化
+
+### Express 性能调优
+
+```javascript
+const express = require('express')
+const compression = require('compression')
+const helmet = require('helmet')
+const rateLimit = require('express-rate-limit')
+
+const app = express()
+
+// 安全和性能中间件
+app.use(helmet())
+app.use(compression())
+
+// 速率限制
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 100, // 限制每个IP 100个请求
+  message: 'Too many requests from this IP'
+})
+app.use('/api/', limiter)
+
+// 响应时间监控
+app.use((req, res, next) => {
+  const start = Date.now()
+  res.on('finish', () => {
+    const duration = Date.now() - start
+    console.log(`${req.method} ${req.path} - ${duration}ms`)
+    
+    // 记录慢请求
+    if (duration > 1000) {
+      console.warn(`Slow request: ${req.method} ${req.path} - ${duration}ms`)
+    }
+  })
+  next()
+})
+
+// 连接保持和超时设置
+const server = app.listen(3000, () => {
+  console.log('Server running on port 3000')
+})
+
+server.keepAliveTimeout = 65000  // Keep-alive 超时
+server.headersTimeout = 66000    // 请求头超时
+```
+
+### 流式处理大文件
+
+```javascript
+const fs = require('fs')
+const { Transform } = require('stream')
+
+// ✅ 流式处理，内存友好
+class DataProcessor extends Transform {
+  constructor(options) {
+    super({ objectMode: true, ...options })
+    this.processedCount = 0
+  }
+  
+  _transform(chunk, encoding, callback) {
+    try {
+      // 处理数据块
+      const processed = this.processChunk(chunk)
+      this.processedCount++
+      
+      // 定期报告进度
+      if (this.processedCount % 1000 === 0) {
+        console.log(`Processed ${this.processedCount} records`)
+      }
+      
+      callback(null, processed)
+    } catch (error) {
+      callback(error)
+    }
+  }
+  
+  processChunk(data) {
+    // 实际的数据处理逻辑
+    return data.toString().toUpperCase()
+  }
+}
+
+// 流式文件处理
+async function processLargeFile(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    const readStream = fs.createReadStream(inputPath)
+    const writeStream = fs.createWriteStream(outputPath)
+    const processor = new DataProcessor()
+    
+    readStream
+      .pipe(processor)
+      .pipe(writeStream)
+      .on('finish', resolve)
+      .on('error', reject)
+  })
+}
+```
+
+## 监控和调试
+
+### 性能监控
+
+```javascript
+const { performance, PerformanceObserver } = require('perf_hooks')
+
+// 性能监控设置
+const perfObserver = new PerformanceObserver((items) => {
+  items.getEntries().forEach((entry) => {
+    console.log(`${entry.name}: ${entry.duration}ms`)
+  })
+})
+
+perfObserver.observe({ entryTypes: ['measure', 'mark'] })
+
+// 性能标记和测量
+function benchmarkFunction(name, fn) {
+  return async (...args) => {
+    performance.mark(`${name}-start`)
+    
+    try {
+      const result = await fn(...args)
+      performance.mark(`${name}-end`)
+      performance.measure(name, `${name}-start`, `${name}-end`)
+      return result
+    } catch (error) {
+      performance.mark(`${name}-error`)
+      performance.measure(`${name}-error`, `${name}-start`, `${name}-error`)
+      throw error
+    }
+  }
+}
+
+// 使用示例
+const optimizedFunction = benchmarkFunction('dataProcessing', async (data) => {
+  // 你的函数逻辑
+  return processData(data)
+})
+```
+
+### APM 集成
+
+```javascript
+// 使用 New Relic 进行应用性能监控
+require('newrelic')
+
+// 自定义性能指标
+const newrelic = require('newrelic')
+
+class PerformanceTracker {
+  static recordCustomMetric(name, value) {
+    newrelic.recordMetric(`Custom/${name}`, value)
+  }
+  
+  static recordTransaction(name, fn) {
+    return newrelic.createTracer(name, fn)
+  }
+  
+  static async trackAsyncOperation(name, operation) {
+    const startTime = Date.now()
+    
+    try {
+      const result = await operation()
+      const duration = Date.now() - startTime
+      
+      this.recordCustomMetric(`${name}/Duration`, duration)
+      this.recordCustomMetric(`${name}/Success`, 1)
+      
+      return result
+    } catch (error) {
+      const duration = Date.now() - startTime
+      
+      this.recordCustomMetric(`${name}/Duration`, duration)
+      this.recordCustomMetric(`${name}/Error`, 1)
+      
+      throw error
+    }
+  }
+}
+```
+
+## 总结
+
+Node.js 性能优化是一个持续的过程，需要关注：
+
+1. **内存管理** - 避免内存泄漏，合理使用缓存
+2. **异步优化** - 正确使用 Promise、Worker Threads
+3. **数据库优化** - 连接池、查询缓存、批量操作
+4. **HTTP 优化** - 中间件配置、流式处理
+5. **监控调试** - 性能监控、APM 集成
+
+通过系统性的优化策略，可以显著提升 Node.js 应用的性能和稳定性。

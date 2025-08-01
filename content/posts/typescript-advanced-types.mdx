@@ -1,0 +1,369 @@
+---
+title: "TypeScript 高级类型系统详解"
+excerpt: "深入理解 TypeScript 的高级类型特性，包括联合类型、交叉类型、条件类型和模板字面量类型。"
+publishDate: "2024-01-10"
+readTime: 8
+tags: ["TypeScript", "类型系统"]
+author: "TechBlog"
+---
+
+# TypeScript 高级类型系统详解
+
+TypeScript 的类型系统是其最强大的特性之一。本文将深入探讨高级类型特性，帮助你编写更安全、更灵活的代码。
+
+## 联合类型和交叉类型
+
+### 联合类型 (Union Types)
+
+联合类型表示一个值可以是几种类型之一：
+
+```typescript
+type Status = 'pending' | 'success' | 'error'
+type StringOrNumber = string | number
+
+function handleStatus(status: Status) {
+  switch (status) {
+    case 'pending':
+      return '处理中...'
+    case 'success':
+      return '成功!'
+    case 'error':
+      return '出错了!'
+    default:
+      // TypeScript 会检查所有情况都被处理了
+      const _exhaustiveCheck: never = status
+      return _exhaustiveCheck
+  }
+}
+```
+
+### 交叉类型 (Intersection Types)
+
+交叉类型将多个类型合并为一个类型：
+
+```typescript
+interface User {
+  id: string
+  name: string
+}
+
+interface AdminPermissions {
+  canDelete: boolean
+  canEdit: boolean
+}
+
+type AdminUser = User & AdminPermissions
+
+const admin: AdminUser = {
+  id: '1',
+  name: 'Admin',
+  canDelete: true,
+  canEdit: true
+}
+```
+
+## 条件类型
+
+条件类型根据类型关系来选择类型：
+
+```typescript
+type NonNullable<T> = T extends null | undefined ? never : T
+
+type ApiResponse<T> = T extends string 
+  ? { message: T }
+  : T extends number
+  ? { code: T }
+  : { data: T }
+
+// 使用示例
+type StringResponse = ApiResponse<string>  // { message: string }
+type NumberResponse = ApiResponse<number>  // { code: number }
+type ObjectResponse = ApiResponse<User>    // { data: User }
+```
+
+## 模板字面量类型
+
+TypeScript 4.1 引入了模板字面量类型：
+
+```typescript
+type EventName<T extends string> = `on${Capitalize<T>}`
+type ClickEvent = EventName<'click'>  // 'onClick'
+
+type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+type Endpoint = `/api/${string}`
+type APICall = `${HTTPMethod} ${Endpoint}`
+
+// 实际使用
+function makeRequest(call: APICall) {
+  const [method, endpoint] = call.split(' ')
+  // 实现请求逻辑
+}
+
+makeRequest('GET /api/users')  // ✅
+makeRequest('POST /api/posts') // ✅
+// makeRequest('INVALID /api/test') // ❌ 类型错误
+```
+
+## 映射类型
+
+映射类型基于旧类型创建新类型：
+
+```typescript
+// 内置工具类型的实现
+type MyPartial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+type MyRequired<T> = {
+  [P in keyof T]-?: T[P]
+}
+
+type MyReadonly<T> = {
+  readonly [P in keyof T]: T[P]
+}
+
+// 自定义映射类型
+type Nullable<T> = {
+  [P in keyof T]: T[P] | null
+}
+
+type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
+interface User {
+  id: string
+  name: string
+  email: string
+  age: number
+}
+
+type UserWithOptionalEmail = Optional<User, 'email'>
+// 等同于: { id: string; name: string; age: number; email?: string }
+```
+
+## 实用工具类型
+
+### 深度操作类型
+
+```typescript
+// 深度只读
+type DeepReadonly<T> = {
+  readonly [P in keyof T]: T[P] extends object ? DeepReadonly<T[P]> : T[P]
+}
+
+// 深度可选
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
+}
+
+// 键值对转换
+type KeysOfType<T, U> = {
+  [K in keyof T]: T[K] extends U ? K : never
+}[keyof T]
+
+interface Example {
+  id: string
+  name: string
+  age: number
+  active: boolean
+}
+
+type StringKeys = KeysOfType<Example, string>  // 'id' | 'name'
+type NumberKeys = KeysOfType<Example, number>  // 'age'
+```
+
+### 函数类型操作
+
+```typescript
+// 提取函数参数类型
+type Parameters<T extends (...args: any) => any> = T extends (...args: infer P) => any ? P : never
+
+// 提取函数返回值类型
+type ReturnType<T extends (...args: any) => any> = T extends (...args: any) => infer R ? R : any
+
+// 异步函数返回值类型
+type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T
+
+// 实际使用
+async function fetchUser(id: string): Promise<User> {
+  // 实现获取用户逻辑
+  return {} as User
+}
+
+type FetchUserParams = Parameters<typeof fetchUser>  // [string]
+type FetchUserReturn = Awaited<ReturnType<typeof fetchUser>>  // User
+```
+
+## 高级类型保护
+
+### 自定义类型保护
+
+```typescript
+interface Dog {
+  type: 'dog'
+  bark(): void
+}
+
+interface Cat {
+  type: 'cat'
+  meow(): void
+}
+
+type Animal = Dog | Cat
+
+// 类型保护函数
+function isDog(animal: Animal): animal is Dog {
+  return animal.type === 'dog'
+}
+
+function isCat(animal: Animal): animal is Cat {
+  return animal.type === 'cat'
+}
+
+// 使用类型保护
+function makeSound(animal: Animal) {
+  if (isDog(animal)) {
+    animal.bark()  // TypeScript 知道这是 Dog
+  } else if (isCat(animal)) {
+    animal.meow()  // TypeScript 知道这是 Cat
+  }
+}
+```
+
+### 断言函数
+
+```typescript
+function assertIsNumber(value: unknown): asserts value is number {
+  if (typeof value !== 'number') {
+    throw new Error('Expected number')
+  }
+}
+
+function processValue(value: unknown) {
+  assertIsNumber(value)
+  // 这里 TypeScript 知道 value 是 number 类型
+  return value.toFixed(2)
+}
+```
+
+## 实际应用场景
+
+### API 响应类型
+
+```typescript
+interface ApiSuccess<T> {
+  success: true
+  data: T
+}
+
+interface ApiError {
+  success: false
+  error: string
+  code: number
+}
+
+type ApiResponse<T> = ApiSuccess<T> | ApiError
+
+// 类型保护
+function isApiSuccess<T>(response: ApiResponse<T>): response is ApiSuccess<T> {
+  return response.success
+}
+
+// 使用
+async function handleApiCall<T>(response: ApiResponse<T>) {
+  if (isApiSuccess(response)) {
+    // TypeScript 知道这里 response.data 存在
+    console.log(response.data)
+  } else {
+    // TypeScript 知道这里 response.error 存在
+    console.error(response.error)
+  }
+}
+```
+
+### 状态机类型
+
+```typescript
+interface LoadingState {
+  status: 'loading'
+}
+
+interface SuccessState<T> {
+  status: 'success'
+  data: T
+}
+
+interface ErrorState {
+  status: 'error'
+  error: string
+}
+
+type AsyncState<T> = LoadingState | SuccessState<T> | ErrorState
+
+// 状态处理函数
+function handleAsyncState<T>(state: AsyncState<T>) {
+  switch (state.status) {
+    case 'loading':
+      return <LoadingSpinner />
+    case 'success':
+      return <DataDisplay data={state.data} />
+    case 'error':
+      return <ErrorMessage error={state.error} />
+  }
+}
+```
+
+## 性能考虑
+
+### 避免过度复杂的类型
+
+```typescript
+// ❌ 过度复杂，影响编译性能
+type OverlyComplex<T> = T extends Record<string, any>
+  ? {
+      [K in keyof T]: T[K] extends Record<string, any>
+        ? OverlyComplex<T[K]>
+        : T[K] extends Array<infer U>
+        ? U extends Record<string, any>
+          ? Array<OverlyComplex<U>>
+          : T[K]
+        : T[K]
+    }
+  : T
+
+// ✅ 更简单、更高效
+type SimpleTransform<T> = {
+  [K in keyof T]: T[K] extends object ? SimpleTransform<T[K]> : T[K]
+}
+```
+
+### 使用类型别名减少重复
+
+```typescript
+// ❌ 重复的复杂类型
+function processUser(user: { id: string; name: string; email: string } | null) {}
+function validateUser(user: { id: string; name: string; email: string } | null) {}
+
+// ✅ 使用类型别名
+type User = {
+  id: string
+  name: string
+  email: string
+}
+
+type OptionalUser = User | null
+
+function processUser(user: OptionalUser) {}
+function validateUser(user: OptionalUser) {}
+```
+
+## 总结
+
+TypeScript 的高级类型系统提供了强大的类型操作能力：
+
+1. **联合和交叉类型** - 组合类型的基础
+2. **条件类型** - 根据条件选择类型
+3. **模板字面量类型** - 字符串层面的类型操作
+4. **映射类型** - 转换对象类型
+5. **类型保护** - 运行时的类型安全
+
+掌握这些高级特性，能让你编写更安全、更灵活的 TypeScript 代码。
